@@ -146,4 +146,7 @@ const showSavedService=()=>{let toast=document.getElementById('saveToast');if(!t
 .delete-zone{display:none!important}.settings-panel .menu-delete{background:#492329;color:#ffc8cd}
 </style><script>
 (()=>{const settings=document.querySelector('.settings-panel');if(!settings||document.getElementById('menuDeleteVehicle'))return;const remove=document.createElement('button');remove.type='button';remove.id='menuDeleteVehicle';remove.className='menu-delete';remove.textContent='Delete this vehicle';remove.hidden=true;settings.appendChild(remove);const refresh=()=>remove.hidden=!selected;document.getElementById('menuButton')?.addEventListener('click',refresh);remove.onclick=()=>{menuPanel.hidden=true;if(selected)deleteCar()};refresh()})();
+</script><script>
+/* Only show vehicle details that have a real value. */
+const filledOnlyVehiclePage=openCar;openCar=id=>{filledOnlyVehiclePage(id);document.querySelectorAll('.clean-details .spec').forEach(spec=>{if(spec.textContent.includes('Not added'))spec.hidden=true});const detailGrid=app.querySelector('.clean-details');if(detailGrid&&!detailGrid.querySelector('.spec:not([hidden])'))detailGrid.closest('.card').hidden=true};window.openCar=openCar;
 </script></body></html>
