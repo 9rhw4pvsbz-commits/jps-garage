@@ -7,7 +7,7 @@
   "theme_color": "#090a0c",
   "icons": [
     {
-      "src": "./garage-icon.png",
+      "src": "https://9rhw4pvsbz-commits.github.io/jps-garage/garage-icon.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
