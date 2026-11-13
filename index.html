@@ -175,4 +175,31 @@ window.menuFamily=async()=>{
 window.chooseFamilyGarage=async id=>{const result=await db.from('garages').select('*').eq('id',id).single();if(result.error)return alert(result.error.message);activeGarage=result.data;localStorage.jpGarage=id;D=result.data.data||{cars:[],records:[]};garage()};
 window.createFamilyFromPage=async()=>{await createFamily();await menuFamily()};
 const familySettingsButton=[...document.querySelectorAll('.settings-panel button')].find(button=>button.textContent.includes('Family garage'));if(familySettingsButton)familySettingsButton.textContent='👥 Family garage & join code';
+</script><style>
+/* Choose between a private garage and one shared with family. */
+.garage-create-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}.garage-create-option{padding:15px;text-align:left;background:#101216;border:1px solid var(--line);border-radius:9px}.garage-create-option:hover{border-color:#e65260}.garage-create-option b{display:block;font-size:15px}.garage-create-option span{display:block;margin-top:5px;color:var(--muted);font-size:12px;font-weight:500}@media(max-width:520px){.garage-create-options{grid-template-columns:1fr}}
+</style><script>
+/* Garage picker: private garages have no share code; family garages do. */
+window.menuFamily=async()=>{
+  closeMenu();
+  if(!user){document.body.classList.add('locked');return}
+  app.innerHTML='<section class="family-page"><div class="toolbar"><button class="secondary" onclick="garage()">← My vehicles</button><h2>My garages</h2></div><section class="card"><div class="muted">Loading your garages…</div></section></section>';
+  const [ownedResult,membersResult]=await Promise.all([db.from('garages').select('*').eq('owner_id',user.id),db.from('garage_members').select('garage_id').eq('user_id',user.id)]);
+  if(ownedResult.error||membersResult.error){app.innerHTML='<section class="family-page"><section class="card"><h2>Could not load garages</h2><p class="muted">'+esc((ownedResult.error||membersResult.error).message)+'</p></section></section>';return}
+  const ids=[...new Set([...(ownedResult.data||[]).map(g=>g.id),...(membersResult.data||[]).map(m=>m.garage_id)])];
+  let garages=[];
+  if(ids.length){const result=await db.from('garages').select('*').in('id',ids);if(result.error){app.innerHTML='<section class="family-page"><section class="card"><h2>Could not load garages</h2><p class="muted">'+esc(result.error.message)+'</p></section></section>';return}garages=result.data||[]}
+  const rows=garages.map(g=>{const personal=String(g.join_code||'').startsWith('PRIVATE-'),mine=g.owner_id===user.id;return '<div class="family-item"><div><b>'+esc(g.name||'Untitled garage')+'</b><span>'+(personal?'Personal · only you can access this':mine?'Family · you own this garage':'Family · shared with you')+(g.id===activeGarage?.id?' · Current garage':'')+'</span>'+((mine&&!personal)?'<div class="family-code" style="font-size:18px;margin:10px 0 0;padding:10px">'+esc(g.join_code||'Not available')+'</div><span>Give this code to family after they sign in.</span>':'')+'</div><button type="button" class="secondary small" onclick="chooseFamilyGarage(\''+g.id+'\')">'+(g.id===activeGarage?.id?'Open':'Switch to this')+'</button></div>'}).join('')||'<div class="empty">No garages yet. Create one below.</div>';
+  app.innerHTML='<section class="family-page"><div class="toolbar"><button class="secondary" onclick="garage()">← My vehicles</button><h2>My garages</h2></div><section class="card"><h2>Create another garage</h2><p class="muted">Choose private for your own vehicles, or family to share records with a code.</p><div class="garage-create-options"><button type="button" class="garage-create-option" onclick="createGarageFromPage(\'personal\')"><b>🔒 Personal garage</b><span>Only you can access it. No join code is made.</span></button><button type="button" class="garage-create-option" onclick="createGarageFromPage(\'family\')"><b>👥 Family garage</b><span>Create a code so family can join and see the same records.</span></button></div></section><section class="card"><h2>Your garages</h2><div class="family-list">'+rows+'</div></section><section class="card"><h2>Join a family garage</h2><p class="muted">Already have a code? Enter it here.</p><form id="familyJoinForm"><label class="full">Family join code<input name="code" placeholder="Example: JP-123456" autocomplete="off" required></label><button class="full">Join garage</button><div id="familyJoinMessage" class="full muted"></div></form></section></section>';
+  document.getElementById('familyJoinForm').onsubmit=async event=>{event.preventDefault();const message=document.getElementById('familyJoinMessage'),code=new FormData(event.currentTarget).get('code').trim().toUpperCase();message.textContent='Joining garage…';const result=await db.rpc('join_family_garage',{code});if(result.error){message.textContent='Could not join: '+result.error.message;return}message.textContent='Joined!';await menuFamily()};
+};
+window.createGarageFromPage=async kind=>{
+  const personal=kind==='personal',code=(personal?'PRIVATE-':'JP-')+Math.random().toString(36).slice(2,8).toUpperCase(),name=personal?'My Personal Garage':'My Family Garage';
+  const result=await db.from('garages').insert({owner_id:user.id,name,join_code:code,data:{cars:[],records:[]}}).select().single();
+  if(result.error){alert('Could not create garage: '+result.error.message);return}
+  await db.from('garage_members').insert({garage_id:result.data.id,user_id:user.id,role:'owner'});
+  activeGarage=result.data;D=result.data.data||{cars:[],records:[]};localStorage.jpGarage=result.data.id;await menuFamily();
+};
+window.chooseFamilyGarage=async id=>{const result=await db.from('garages').select('*').eq('id',id).single();if(result.error){alert(result.error.message);return}activeGarage=result.data;D=result.data.data||{cars:[],records:[]};localStorage.jpGarage=id;garage()};
+const garageSettingsButton=[...document.querySelectorAll('.settings-panel button')].find(button=>button.textContent.includes('Family garage'));if(garageSettingsButton)garageSettingsButton.textContent='👥 My garages & join codes';
 </script></body></html>
