@@ -149,4 +149,30 @@ const showSavedService=()=>{let toast=document.getElementById('saveToast');if(!t
 </script><script>
 /* Only show vehicle details that have a real value. */
 const filledOnlyVehiclePage=openCar;openCar=id=>{filledOnlyVehiclePage(id);document.querySelectorAll('.clean-details .spec').forEach(spec=>{if(spec.textContent.includes('Not added'))spec.hidden=true});const detailGrid=app.querySelector('.clean-details');if(detailGrid&&!detailGrid.querySelector('.spec:not([hidden])'))detailGrid.closest('.card').hidden=true};window.openCar=openCar;
+</script><style>
+/* Family garage is always easy to find from the menu. */
+.family-page{max-width:720px;margin:0 auto}.family-code{margin:12px 0;padding:16px;border:1px dashed #e65260;border-radius:10px;background:#211217;text-align:center;font-size:27px;font-weight:900;letter-spacing:3px;color:#fff}.family-list{display:grid;gap:10px;margin-top:12px}.family-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid var(--line);border-radius:8px;background:#101216}.family-item b{display:block}.family-item span{display:block;color:var(--muted);font-size:12px;margin-top:3px}@media(max-width:480px){.family-item{align-items:flex-start;flex-direction:column}.family-item button{width:100%}}
+</style><script>
+/* Dedicated family-garage page: create, share a code, join, switch, or leave. */
+window.menuFamily=async()=>{
+  closeMenu();
+  if(!user){document.body.classList.add('locked');return}
+  app.innerHTML='<section class="family-page"><div class="toolbar"><button class="secondary" onclick="garage()">← My vehicles</button><h2>Family garage</h2></div><section class="card"><div class="muted">Loading your shared garages…</div></section></section>';
+  const [ownResult,memberResult]=await Promise.all([
+    db.from('garages').select('*').eq('owner_id',user.id),
+    db.from('garage_members').select('garage_id').eq('user_id',user.id)
+  ]);
+  if(ownResult.error||memberResult.error){app.innerHTML='<section class="family-page"><div class="toolbar"><button class="secondary" onclick="garage()">← My vehicles</button><h2>Family garage</h2></div><section class="card"><h2>Could not load family garages</h2><p class="muted">'+esc((ownResult.error||memberResult.error).message)+'</p></section></section>';return}
+  const ids=[...new Set([...(ownResult.data||[]).map(g=>g.id),...(memberResult.data||[]).map(m=>m.garage_id)])];
+  let garages=[];
+  if(ids.length){const allResult=await db.from('garages').select('*').in('id',ids);if(allResult.error){app.innerHTML='<section class="family-page"><section class="card"><h2>Could not load family garages</h2><p class="muted">'+esc(allResult.error.message)+'</p></section></section>';return}garages=allResult.data||[]}
+  const owned=garages.find(g=>g.owner_id===user.id);
+  const list=garages.map(g=>'<div class="family-item"><div><b>'+esc(g.name||'Family garage')+'</b><span>'+(g.owner_id===user.id?'You own this garage':'Shared with you')+(g.id===activeGarage?.id?' · Current garage':'')+'</span></div><button type="button" class="secondary small" onclick="chooseFamilyGarage(\''+g.id+'\')">Open</button></div>').join('');
+  const ownCard=owned?'<section class="card hero"><h2>Your family join code</h2><div class="family-code">'+esc(owned.join_code||'Not available')+'</div><p class="muted">Have family members sign in with their own email, then they can enter this code to join your garage.</p></section>':'<section class="card hero"><h2>Start a family garage</h2><p class="muted">Create one private garage, then give the join code to your family.</p><button onclick="createFamilyFromPage()">Create family garage</button></section>';
+  app.innerHTML='<section class="family-page"><div class="toolbar"><button class="secondary" onclick="garage()">← My vehicles</button><h2>Family garage</h2></div>'+ownCard+'<section class="card"><h2>Join a family garage</h2><p class="muted">Enter a code a family member gave you.</p><form id="familyJoinForm"><label class="full">Family join code<input name="code" placeholder="Example: JP-123456" autocomplete="off" required></label><button class="full">Join garage</button><div id="familyJoinMessage" class="full muted"></div></form></section>'+(garages.length?'<section class="card"><h2>Your garages</h2><div class="family-list">'+list+'</div></section>':'')+'</section>';
+  document.getElementById('familyJoinForm').onsubmit=async event=>{event.preventDefault();const msg=document.getElementById('familyJoinMessage');const code=new FormData(event.currentTarget).get('code').trim().toUpperCase();msg.textContent='Joining garage…';const result=await db.rpc('join_family_garage',{code});if(result.error){msg.textContent='Could not join: '+result.error.message;return}msg.textContent='Joined! Opening your shared garage…';await menuFamily()};
+};
+window.chooseFamilyGarage=async id=>{const result=await db.from('garages').select('*').eq('id',id).single();if(result.error)return alert(result.error.message);activeGarage=result.data;localStorage.jpGarage=id;D=result.data.data||{cars:[],records:[]};garage()};
+window.createFamilyFromPage=async()=>{await createFamily();await menuFamily()};
+const familySettingsButton=[...document.querySelectorAll('.settings-panel button')].find(button=>button.textContent.includes('Family garage'));if(familySettingsButton)familySettingsButton.textContent='👥 Family garage & join code';
 </script></body></html>
