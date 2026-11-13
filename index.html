@@ -202,4 +202,8 @@ window.createGarageFromPage=async kind=>{
 };
 window.chooseFamilyGarage=async id=>{const result=await db.from('garages').select('*').eq('id',id).single();if(result.error){alert(result.error.message);return}activeGarage=result.data;D=result.data.data||{cars:[],records:[]};localStorage.jpGarage=id;garage()};
 const garageSettingsButton=[...document.querySelectorAll('.settings-panel button')].find(button=>button.textContent.includes('Family garage'));if(garageSettingsButton)garageSettingsButton.textContent='👥 My garages & join codes';
+</script><script>
+/* Send family the app link without having to hunt for it. */
+window.shareAppLink=async()=>{const url='https://9rhw4pvsbz-commits.github.io/jps-garage/';const text="Open JP'S Garage to keep up with our vehicle records: "+url;try{if(navigator.share){await navigator.share({title:"JP'S Garage",text,url});return}if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(text);alert('App link copied — paste it into a text or message for your family.');return}prompt('Copy this app link:',url)}catch(error){if(error?.name!=='AbortError')alert('Could not open sharing. Copy this link: '+url)}};
+(()=>{const panel=document.querySelector('.settings-panel');if(!panel||document.getElementById('shareAppLinkButton'))return;const share=document.createElement('button');share.type='button';share.id='shareAppLinkButton';share.className='secondary';share.textContent='↗ Share app with family';share.onclick=shareAppLink;panel.prepend(share)})();
 </script></body></html>
