@@ -324,45 +324,17 @@ window.openWalkaround=id=>{
 </script><style>
 /* VIN picture lookup interface. */
 .vin-picture-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:3px 0 12px}.vin-picture-row button{white-space:nowrap}.vin-picture-status{color:var(--muted);font-size:13px}.walkaround-car-photo{width:100%;max-height:350px;display:block;object-fit:contain;border-radius:12px;filter:drop-shadow(0 22px 20px #000b)}
-<script>
-/* A real, rotatable catalog model can be built once for each vehicle. */
-const threeDWalkaround=window.openWalkaround;
-window.openWalkaround=id=>{
-  threeDWalkaround(id);
-  const car=D.cars.find(item=>item.id===id),modal=document.querySelector('.walkaround-modal');
-  if(!car||!modal)return;
-  const art=modal.querySelector('.walkaround-car'),panel=modal.querySelector('.walk-panel');
-  const call=async(payload)=>{
-    const session=(await db.auth.getSession()).data?.session;
-    if(!session)throw new Error('Sign in before building a 3D model.');
-    const response=await fetch('https://tghxlmknqdcidwiysxco.supabase.co/functions/v1/vehicle-image',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':'sb_publishable_JWxhFdJ-ISmQJCDGBXzZew_QEL3_mwk'},body:JSON.stringify(payload)});
-    const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not build the 3D model.');return data;
-  };
-  const showModel=()=>{
-    if(!car.model3d?.publicId||!art)return;
-    if(!document.querySelector('script[data-car-3d]')){const script=document.createElement('script');script.src='https://carimage.dev/embed/3d.js';script.async=true;script.dataset.car3d='1';document.head.append(script)}
-    const viewer=document.createElement('car-3d');viewer.setAttribute('model',car.model3d.publicId);viewer.className='vehicle-3d-viewer';art.replaceChildren(viewer);
-  };
-  if(car.model3d?.publicId)showModel();
-  const controls=document.createElement('div');controls.className='three-d-controls';
-  const building=car.model3d?.status&&car.model3d.status!=='ready';
-  controls.innerHTML='<b>3D vehicle model</b><span>'+((car.model3d?.status==='ready')?'Ready — drag to rotate it.':building?'Building now — check back in about 20 minutes.':'Make a rotatable model for this year, make, and model.')+'</span><button type="button" class="secondary">'+(car.model3d?'Check 3D model':'Build 3D model')+'</button>';
-  panel.append(controls);
-  const button=controls.querySelector('button');
-  button.onclick=async()=>{
-    button.disabled=true;button.textContent=car.model3d?'Checking…':'Starting…';
-    try{
-      let result;
-      if(car.model3d?.id)result=await call({action:'3d-status',id:car.model3d.id});
-      else result=await call({action:'3d',year:car.year,make:car.make,model:car.model,color:'#b51f2d'});
-      const model=result.model;
-      car.model3d={id:model.id,status:model.status,publicId:model.public?.id||car.model3d?.publicId||''};
-      await save();
-      if(model.status==='ready'){controls.querySelector('span').textContent='Ready — drag to rotate it.';button.textContent='3D model ready';showModel()}else{controls.querySelector('span').textContent='Building now — check back in about 20 minutes.';button.textContent='Check 3D model'}
-    }catch(error){controls.querySelector('span').textContent=error?.message||'Could not build the 3D model.';button.textContent='Try again'}
-    finally{button.disabled=false}
-  };
-};
+</style><script>
+/* A separate playground: never attached to garage vehicles or their saved records. */
+let playgroundModel=null;
+window.open3DPlayground=()=>{
+  const modal=document.createElement('div');modal.className='walkaround-modal';
+  modal.innerHTML='<section class="walkaround-shell playground-shell"><div class="walkaround-head"><div><h2>3D Car Playground</h2><div class="muted">Try a 3D vehicle without adding it to your garage.</div></div><button type="button" class="secondary small">Close</button></div><div class="playground-body"><form class="playground-form"><label>Year<input name="year" type="number" min="1886" max="2035" placeholder="2015" required></label><label>Make<input name="make" placeholder="Volkswagen" required></label><label>Model<input name="model" placeholder="Passat" required></label><button>Build 3D model</button><div class="muted playground-status">Nothing you enter here is saved to your garage.</div></form><div class="playground-stage"><div class="playground-empty">Choose a year, make, and model to build a rotatable 3D vehicle.</div></div></div></section>';
+  const close=()=>modal.remove(),form=modal.querySelector('form'),status=modal.querySelector('.playground-status'),stage=modal.querySelector('.playground-stage');modal.querySelector('.walkaround-head button').onclick=close;modal.onclick=event=>{if(event.target===modal)close()};
+  const call=async(payload)=>{const session=(await db.auth.getSession()).data?.session;if(!session)throw new Error('Sign in before building a 3D model.');const response=await fetch('https://tghxlmknqdcidwiysxco.supabase.co/functions/v1/vehicle-image',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':'sb_publishable_JWxhFdJ-ISmQJCDGBXzZew_QEL3_mwk'},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not build the 3D model.');return data};
+  const show=()=>{if(!playgroundModel?.publicId)return;if(!document.querySelector('script[data-car-3d]')){const script=document.createElement('script');script.src='https://carimage.dev/embed/3d.js';script.async=true;script.dataset.car3d='1';document.head.append(script)}const viewer=document.createElement('car-3d');viewer.setAttribute('model',playgroundModel.publicId);viewer.className='vehicle-3d-viewer';stage.replaceChildren(viewer)};
+  form.onsubmit=async event=>{event.preventDefault();const data=new FormData(form),button=form.querySelector('button');button.disabled=true;button.textContent='Starting…';status.textContent='Building the 3D model. It can take about 20 minutes.';try{const result=await call({action:'3d',year:data.get('year'),make:data.get('make'),model:data.get('model'),color:'#b51f2d'});playgroundModel={id:result.model.id,status:result.model.status,publicId:result.model.public?.id||''};status.textContent=playgroundModel.status==='ready'?'Ready — drag the car to rotate it.':'Building now — you can close this and check again later.';button.textContent='Check 3D model';show()}catch(error){status.textContent=error?.message||'Could not build the 3D model.';button.textContent='Build 3D model'}finally{button.disabled=false}};document.body.append(modal)};
+(()=>{const list=document.querySelector('.menu-list');if(!list||document.getElementById('playgroundMenu'))return;const button=document.createElement('button');button.id='playgroundMenu';button.type='button';button.className='secondary';button.textContent='◈ 3D Car Playground';button.onclick=()=>{closeMenu();open3DPlayground()};list.prepend(button)})();
 </script><style>
-.three-d-controls{display:grid;gap:7px;margin-top:14px;padding:12px;border-radius:10px;background:#171b21;border:1px solid #ffffff18;font-size:13px}.three-d-controls span{color:#c9cdd4;line-height:1.35}.three-d-controls button{margin-top:2px}.vehicle-3d-viewer{display:block;width:100%;height:340px;min-height:250px}
+.playground-shell{max-width:900px}.playground-body{display:grid;grid-template-columns:280px 1fr;min-height:430px}.playground-form{display:grid;align-content:start;gap:12px;padding:18px;background:#0d1014;border-right:1px solid #ffffff18}.playground-form label{display:grid;gap:6px;font-weight:700;font-size:13px}.playground-form input{width:100%}.playground-stage{min-height:360px;display:grid;place-items:center;padding:15px;background:radial-gradient(ellipse at 50% 65%,#6f182444,transparent 54%),#080a0d}.playground-empty{max-width:260px;text-align:center;color:#c9cdd4;line-height:1.45}.vehicle-3d-viewer{display:block;width:100%;height:360px;min-height:280px}@media(max-width:700px){.playground-body{grid-template-columns:1fr}.playground-form{border-right:0;border-bottom:1px solid #ffffff18}.playground-stage{min-height:320px}}
 </style></body></html>
