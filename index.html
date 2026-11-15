@@ -357,4 +357,10 @@ garage=()=>{selected=null;const cars=D.cars||[],records=D.records||[],total=reco
 </style><script>
 const simpleMenuOpen=document.getElementById('menuButton').onclick;
 document.getElementById('menuButton').onclick=()=>{simpleMenuOpen?.();const sheet=document.querySelector('.menu-sheet'),settings=document.querySelector('.settings-panel'),sync=document.getElementById('syncMenuInfo');if(sheet){sheet.querySelector('.toolbar h2').textContent='Menu';sheet.querySelector('#menuBadge')?.remove()}if(settings&&sync)settings.prepend(sync)};
+</script><style>
+/* The 3D Playground has been removed from the app menu. */
+#playgroundMenu{display:none!important}
+</style><script>
+document.getElementById('playgroundMenu')?.remove();
+window.open3DPlayground=undefined;
 </script></body></html>
