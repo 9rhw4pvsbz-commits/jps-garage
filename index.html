@@ -365,4 +365,37 @@ document.getElementById('menuButton').onclick=()=>{simpleMenuOpen?.();const shee
 </style><script>
 document.getElementById('playgroundMenu')?.remove();
 window.open3DPlayground=undefined;
+</script><style>
+/* Free NHTSA recall lookup, kept separate from service reminders. */
+.recall-check{margin:16px 0;background:linear-gradient(120deg,#171b21e8,#101216e8)}
+.recall-check .section-title{align-items:flex-start}.recall-check h2{margin-bottom:3px}.recall-status{line-height:1.5}.recall-results{display:grid;gap:9px;margin-top:13px}.recall-result{padding:11px 12px;border:1px solid #ffffff18;border-radius:9px;background:#090b0db8}.recall-result b{display:block;margin-bottom:4px}.recall-result .muted{font-size:13px;line-height:1.45}.recall-link{display:inline-block;margin-top:13px;font-weight:800}.recall-check button[disabled]{opacity:.7;cursor:wait}@media(max-width:620px){.recall-check .section-title{display:grid;gap:12px}.recall-check .section-title button{width:100%}}
+</style><script>
+/* Match campaigns by year/make/model through the free official NHTSA service. */
+const recallCheckVehiclePage=openCar;
+openCar=id=>{
+  recallCheckVehiclePage(id);
+  const car=D.cars.find(item=>item.id===id),cover=app.querySelector('.vehicle-cover');
+  if(!car||!cover||app.querySelector('.recall-check'))return;
+  const ready=[car.year,car.make,car.model].every(value=>String(value||'').trim());
+  const card=document.createElement('section');
+  card.className='card recall-check';
+  card.innerHTML='<div class="section-title"><div><h2>Recall check</h2><div class="muted">Free safety recall search for this vehicle.</div></div><button type="button" class="secondary small" '+(ready?'':'disabled')+'>Check recalls</button></div><div class="muted recall-status">'+(ready?'Uses the saved year, make, and model. For an exact open-recall answer, confirm this vehicle’s VIN with NHTSA.':'Add the year, make, and model in Vehicle details to use the recall search.')+'</div>';
+  cover.insertAdjacentElement('afterend',card);
+  if(!ready)return;
+  const button=card.querySelector('button'),status=card.querySelector('.recall-status');
+  button.onclick=async()=>{
+    button.disabled=true;button.textContent='Checking…';status.textContent='Checking official safety recall campaigns…';
+    try{
+      const endpoint='https://api.nhtsa.gov/recalls/recallsByVehicle?make='+encodeURIComponent(car.make)+'&model='+encodeURIComponent(car.model)+'&modelYear='+encodeURIComponent(car.year);
+      const response=await fetch(endpoint),data=await response.json();
+      if(!response.ok)throw new Error('The recall service is unavailable right now.');
+      const results=Array.isArray(data.results)?data.results:(Array.isArray(data.Results)?data.Results:[]);
+      const n=results.length;
+      if(!n){status.innerHTML='<b>No matching recall campaigns found.</b><div class="muted">This search uses year, make, and model. Check the VIN with NHTSA to confirm this exact vehicle.</div><a class="recall-link" href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener">Check this VIN at NHTSA ↗</a>';return}
+      status.innerHTML='<b>'+n+' matching recall campaign'+(n===1?'':'s')+' found.</b><div class="recall-results">'+results.slice(0,5).map(item=>{const component=item.Component||item.component||'Safety recall';const summary=item.Summary||item.summary||item.Consequence||item.consequence||'See NHTSA for complete recall information.';const remedy=item.Remedy||item.remedy||'';return '<article class="recall-result"><b>'+esc(component)+'</b><div class="muted">'+esc(summary)+'</div>'+(remedy?'<div class="muted" style="margin-top:6px"><b>Fix:</b> '+esc(remedy)+'</div>':'')+'</article>'}).join('')+'</div>'+(n>5?'<div class="muted" style="margin-top:9px">Showing the first 5 campaigns.</div>':'')+'<a class="recall-link" href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener">Confirm this VIN at NHTSA ↗</a>';
+    }catch(error){status.innerHTML='<b>Could not check recalls right now.</b><div class="muted">Try again in a moment, or use the official VIN search below.</div><a class="recall-link" href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener">Check this VIN at NHTSA ↗</a>'}
+    finally{button.disabled=false;button.textContent='Check recalls'}
+  };
+};
+window.openCar=openCar;
 </script></body></html>
