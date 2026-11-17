@@ -360,6 +360,8 @@ document.getElementById('menuButton').onclick=()=>{simpleMenuOpen?.();const shee
 </script><style>
 /* The 3D Playground has been removed from the app menu. */
 #playgroundMenu{display:none!important}
+/* On phones, put the at-the-vehicle information directly below the vehicle header. */
+@media(max-width:720px){.clean-main-grid>aside{order:-1;display:grid;gap:12px}.clean-main-grid>aside .quick-specs{margin:0}.clean-main-grid>div{order:0}}
 </style><script>
 document.getElementById('playgroundMenu')?.remove();
 window.open3DPlayground=undefined;
