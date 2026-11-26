@@ -606,4 +606,8 @@ window.printVehicleInfo=id=>{lightVehicleInfo(id);const win=window.open('','jps-
 </script><style></style><script>
 const lightVehicleInfoActions=window.printVehicleInfo;
 window.printVehicleInfo=id=>{lightVehicleInfoActions(id);const win=window.open('','jps-garage-info'),doc=win?.document;if(!doc?.querySelector('.paper-body'))return;const style=doc.createElement('style');style.textContent='.actions{background:#fff;border-bottom:1px solid #d8dce0}.actions a{background:#e7e9ed;color:#20242a}.actions .primary{background:#bd2637;color:#fff}';doc.head.append(style)};
+</script><script>
+/* Match the vehicle report's red rules on the printable shop sheet. */
+const redRuleVehicleInfo=window.printVehicleInfo;
+window.printVehicleInfo=id=>{redRuleVehicleInfo(id);const win=window.open('','jps-garage-info'),doc=win?.document;if(!doc?.querySelector('.paper-body'))return;const style=doc.createElement('style');style.textContent='.paper-head{border-bottom:4px solid #c72033}.paper-body .info-card{border-left:4px solid #c72033}.paper-body .section-label{padding-bottom:8px;border-bottom:2px solid #c72033}.paper-body .footer{border-top:1px solid #c72033}@media print{.paper-head{border-bottom:4px solid #c72033!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.paper-body .info-card{border-left:4px solid #c72033;-webkit-print-color-adjust:exact;print-color-adjust:exact}.paper-body .section-label{border-bottom:2px solid #c72033;-webkit-print-color-adjust:exact;print-color-adjust:exact}}';doc.head.append(style)};
 </script></body></html>
