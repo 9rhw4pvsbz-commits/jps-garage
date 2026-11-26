@@ -557,4 +557,10 @@ document.addEventListener('click',event=>{const button=event.target.closest('.ve
 </script><style>
 /* A lighter garage heading gives the vehicle cards more room. */
 .home-hero{padding:2px 0 4px;border:0;border-radius:0;background:none;box-shadow:none;align-items:center}.home-hero h2{font-size:24px;margin:0}.home-hero>.home-actions .home-stat{display:none}.home-hero>.home-actions{gap:0}.home-hero .muted{font-size:13px;margin-top:4px}.garage-home{gap:14px}@media(max-width:680px){.home-hero{padding:0;flex-direction:row;align-items:center;gap:12px}.home-hero h2{font-size:21px}.home-hero .muted{display:none}.home-hero>.home-actions{width:auto;flex:none}.home-hero .home-actions>button{width:auto;white-space:nowrap}}
-</style></body></html>
+</style><style>
+.garage-home .home-hero{display:none}.vehicle-history-total{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;padding:14px 16px;border:1px solid #ffffff20;border-radius:9px;background:#171a1f}.vehicle-history-total strong{font-size:20px;color:#fff}
+</style><script>
+/* Show spending beside the vehicle's service history. */
+const historyTotalVehiclePage=openCar;
+openCar=id=>{historyTotalVehiclePage(id);const panel=app.querySelector('[data-vehicle-section="Service history"]');if(!panel)return;const total=(D.records||[]).filter(record=>record.vehicle===id).reduce((sum,record)=>sum+(Number(record.cost)||0),0),summary=document.createElement('div');summary.className='vehicle-history-total';summary.innerHTML='<span>Total spent on this vehicle</span><strong>$'+total.toFixed(2)+'</strong>';panel.prepend(summary)};window.openCar=openCar;
+</script></body></html>
