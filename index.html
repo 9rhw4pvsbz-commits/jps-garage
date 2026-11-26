@@ -548,4 +548,7 @@ document.addEventListener('click',event=>{const action=event.target.closest('[da
 </style><script>
 /* Vehicle photo's Add service action opens the service view. */
 document.addEventListener('click',event=>{const button=event.target.closest('.vehicle-cover button');if(!button||!button.textContent.toLowerCase().includes('add service'))return;event.preventDefault();event.stopImmediatePropagation();window.showVehicleSection('Add service');document.getElementById('serviceArea')?.scrollIntoView({behavior:'smooth',block:'start'})},true);
+</script><script>
+/* Keep deletion in the menu, visible whenever a vehicle is open. */
+(()=>{const button=document.getElementById('menuDeleteVehicle'),list=document.querySelector('.menu-list'),settings=document.getElementById('cleanSettings');if(!button||!list)return;button.textContent='Delete this vehicle';if(settings)settings.before(button);else list.append(button);button.onclick=async()=>{const car=(D.cars||[]).find(item=>item.id===selected);if(!car)return;if(!confirm('Delete '+title(car)+' from this garage? Its service records, receipts, photos, and parts history will also be removed for everyone using this garage.'))return;const id=car.id;D.cars=D.cars.filter(item=>item.id!==id);D.records=(D.records||[]).filter(item=>item.vehicle!==id);closeMenu();selected=null;await save()}})();
 </script></body></html>
