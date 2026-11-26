@@ -573,4 +573,8 @@ window.printVehicle=()=>{const car=(D.cars||[]).find(item=>item.id===selected);i
 /* Keep vehicle report printouts focused on work performed, without prices. */
 const privateCostVehicleReport=window.printVehicle;
 window.printVehicle=()=>{privateCostVehicleReport();const win=window.open('','jps-garage-report');if(!win)return;const body=win.document.querySelector('.paper-body');if(!body)return;body.querySelectorAll('table').forEach(table=>{table.querySelectorAll('tr').forEach(row=>row.lastElementChild?.remove())});body.querySelectorAll('p').forEach(item=>{if(item.textContent.startsWith('Total spent:'))item.remove()})};
+</script><script>
+/* Air-filter work in parts history also contributes to its maintenance reminder. */
+const servicePlanWithPartsBase=servicePlan;
+servicePlan=(car,records)=>{const matching=(Array.isArray(car.replacementParts)?car.replacementParts:[]).filter(item=>/air[\s-]*filter/i.test(String(item.name||''))&&!/cabin/i.test(String(item.name||''))&&Number(item.mileage)>0).map(item=>({service:'Air filter',mileage:item.mileage,date:item.date,completedTasks:['airFilter']}));const base=servicePlanWithPartsBase(car,records),combined=[...(records||[]),...matching].sort((a,b)=>Number(b.mileage||0)-Number(a.mileage||0)),air=servicePlanWithPartsBase(car,combined).find(item=>item.key==='airFilter');return base.map(item=>item.key==='airFilter'?air:item)};
 </script></body></html>
